@@ -1,0 +1,7 @@
+#This is the default config for DeathCharge
+#Percent determines the amount of percentage lost when a player dies
+#Example:
+#    percent: 5
+#Player will lose 5 percent of their money on death
+
+percent: 5.00

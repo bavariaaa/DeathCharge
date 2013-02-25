@@ -1,0 +1,5 @@
+name: DeathCharge
+main: com.github.seemethere.DeathCharge.DeathCharge
+version: $version$
+author: seemethere
+depend: [Vault]
