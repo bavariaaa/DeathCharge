@@ -14,8 +14,7 @@ import java.io.File;
 import java.util.logging.Logger;
 
 /**
- * User: Seemethere
- * Date: 2/24/13
+ * @author seemethere
  */
 public class DeathCharge extends JavaPlugin implements Listener {
 
