@@ -2,4 +2,8 @@ name: DeathCharge
 main: com.github.seemethere.DeathCharge.DeathCharge
 version: $version$
 author: seemethere
-depend: [Vault]
+depend: [Vault, WorldGuard, WorldEdit]
+commands:
+    deathcharge:
+        description: Generic base command for DeathCharge
+        usage: /<command> args

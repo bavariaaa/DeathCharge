@@ -5,6 +5,12 @@
 *.iml
 *.iws
 *.zip
+*.properties
+*.xml
 .DS_Store
 log/
 target/
+bin/
+out/
+lib/
+src/META-INF/
