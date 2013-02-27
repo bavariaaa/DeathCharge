@@ -34,12 +34,14 @@ public class DeathCharge extends JavaPlugin implements Listener {
     private WorldGuardPlugin wg = null;
     private YamlConfiguration r_config = null;
 
+    @Override
     public void onEnable() {
         //Make initial config and ExculdedRegions.yml
         if(!make_Config()) {
             logger.severe(PLUGIN_NAME + "Unable to create config or ExcludedRegion.yml! Exiting...");
             return;
         }
+
         //Set up economy
         RegisteredServiceProvider<Economy> economyP = getServer().getServicesManager().getRegistration(Economy.class);
         if (economyP != null)
@@ -73,6 +75,7 @@ public class DeathCharge extends JavaPlugin implements Listener {
         logger.info(PLUGIN_NAME + "DeathCharge has been enabled!");
     }
 
+    @Override
     public void onDisable() {
         save_Config();
         e = null;
@@ -177,6 +180,12 @@ public class DeathCharge extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player p = event.getEntity();
+
+        //Checks the config to disable/enable pvp
+        if(p.getKiller() != null)
+            if(!this.getConfig().getBoolean("pvp"))
+                return;
+
         //Checks if the area the player is standing in is excluded
         if (find_Region(p.getLocation()) != null) {
             String r = find_Region(p.getLocation()).getId().toLowerCase();
@@ -185,12 +194,9 @@ public class DeathCharge extends JavaPlugin implements Listener {
                 return;
         }
         //Actually take the money from the account
-        double p_lost = this.getConfig().getDouble("percent");
-        p_lost /= 100;
-        double b = e.getBalance(p.getName());
-        b *= p_lost;
-        e.withdrawPlayer(p.getName(), b);
-        p.sendMessage(String.format("%sYou have lost %s%.2f%s on death!",
-                ChatColor.YELLOW, ChatColor.RED, b, ChatColor.YELLOW));
+        double m_lost = this.getConfig().getDouble("percent")/100 * e.getBalance(p.getName());
+        e.withdrawPlayer(p.getName(), m_lost);
+        p.sendMessage(String.format("%sYou have lost %s$%.2f%s on death!",
+                ChatColor.YELLOW, ChatColor.RED, m_lost, ChatColor.YELLOW));
     }
 }

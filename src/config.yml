@@ -1,13 +1,18 @@
 #This is the default config for [DeathCharge]
+
 #Percent determines the amount of
 #percentage lost when a player dies
-
 #Example:
 #    percent: 5.00
 #    Player will lose 5 percent of
 #    their money on death
-
 percent: 5.00
+
+#PVP determines if death charge is invoked
+#on deaths caused by pvp
+# false = will lose money on pvp
+# true = will not lose money on pvp
+pvp: false
 
 #*******************************************************
 #****                                               ****
