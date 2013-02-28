@@ -37,7 +37,7 @@ public class DeathCharge extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         //Make initial config and ExculdedRegions.yml
-        if(!make_Config()) {
+        if (!make_Config()) {
             logger.severe(PLUGIN_NAME + "Unable to create config or ExcludedRegion.yml! Exiting...");
             return;
         }
@@ -109,7 +109,6 @@ public class DeathCharge extends JavaPlugin implements Listener {
 
     private void save_Config() {
         File r_file = new File(this.getDataFolder(), "ExcludedRegions.yml");
-        r_config.createSection("ex_regions");
         r_config.set("ex_regions", ex_regions);
         try {
             r_config.save(r_file);
@@ -180,12 +179,10 @@ public class DeathCharge extends JavaPlugin implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player p = event.getEntity();
-
-        //Checks the config to disable/enable pvp
-        if(p.getKiller() != null)
-            if(!this.getConfig().getBoolean("pvp"))
+        //Checks the config to disable/enable pvp toggle
+        if (p.getKiller() != null)
+            if (!this.getConfig().getBoolean("pvp"))
                 return;
-
         //Checks if the area the player is standing in is excluded
         if (find_Region(p.getLocation()) != null) {
             String r = find_Region(p.getLocation()).getId().toLowerCase();
@@ -194,7 +191,7 @@ public class DeathCharge extends JavaPlugin implements Listener {
                 return;
         }
         //Actually take the money from the account
-        double m_lost = this.getConfig().getDouble("percent")/100 * e.getBalance(p.getName());
+        double m_lost = (this.getConfig().getDouble("percent") / 100) * e.getBalance(p.getName());
         e.withdrawPlayer(p.getName(), m_lost);
         p.sendMessage(String.format("%sYou have lost %s$%.2f%s on death!",
                 ChatColor.YELLOW, ChatColor.RED, m_lost, ChatColor.YELLOW));
