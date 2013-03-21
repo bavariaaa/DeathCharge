@@ -18,7 +18,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -28,11 +30,12 @@ import java.util.logging.Logger;
 public class DeathCharge extends JavaPlugin implements Listener {
 
     private static final String PLUGIN_NAME = "[DeathCharge] ";
+    private static HashMap<String, String> ex_regions = new HashMap<String, String>();
+    private static List<String> ex_worlds = new ArrayList<String>();
+    private static YamlConfiguration r_config = null;
     public Logger logger = Logger.getLogger("Minecraft");
-    private HashMap<String, String> ex_regions = new HashMap<String, String>();
     private Economy e = null;
     private WorldGuardPlugin wg = null;
-    private YamlConfiguration r_config = null;
 
     @Override
     public void onEnable() {
@@ -71,6 +74,9 @@ public class DeathCharge extends JavaPlugin implements Listener {
             for (Map.Entry<String, Object> entry : temp.entrySet())
                 ex_regions.put(entry.getKey(), (String) entry.getValue());
         }
+        // Add support for multi-worlds
+        ex_worlds = r_config.getStringList("ex_worlds");
+
         this.getServer().getPluginManager().registerEvents(this, this);
         logger.info(PLUGIN_NAME + "DeathCharge has been enabled!");
     }
@@ -81,6 +87,7 @@ public class DeathCharge extends JavaPlugin implements Listener {
         e = null;
         wg = null;
         ex_regions = null;
+        ex_worlds = null;
         r_config = null;
         logger.info(PLUGIN_NAME + "DeathCharge has been disabled!");
         logger = null;
@@ -110,6 +117,7 @@ public class DeathCharge extends JavaPlugin implements Listener {
     private void save_Config() {
         File r_file = new File(this.getDataFolder(), "ExcludedRegions.yml");
         r_config.set("ex_regions", ex_regions);
+        r_config.set("ex_worlds", ex_worlds);
         try {
             r_config.save(r_file);
         } catch (IOException e) {
@@ -133,13 +141,14 @@ public class DeathCharge extends JavaPlugin implements Listener {
             logger.info(PLUGIN_NAME + "Silly console you can't do any commands");
             return true;
         }
-
         Player p = (Player) sender;
         if (command.getName().equalsIgnoreCase("deathcharge"))
-            if (args.length == 0 || args.length > 1 || !args[0].equalsIgnoreCase("region"))
+            if (args.length == 0 || args.length > 1)
                 about(p);
-            else
+            else if (args[0].equalsIgnoreCase("region"))
                 c_region(p);
+            else if (args[0].equalsIgnoreCase("world"))
+                c_world(p);
         return true;
     }
 
@@ -169,6 +178,30 @@ public class DeathCharge extends JavaPlugin implements Listener {
         }
     }
 
+    private void c_world(Player p) {
+        if (!p.isOp()) {
+            p.sendMessage(String.format("%sERROR: %sInsufficient permissions!",
+                    ChatColor.RED, ChatColor.YELLOW));
+            return;
+        }
+        if (ex_worlds.contains(p.getWorld().toString())) {
+            ex_worlds.remove(p.getWorld().toString());
+            p.sendMessage(String.format("%s[DeathCharge]%s Removed %s%s%s from excluded worlds!",
+                    ChatColor.YELLOW, ChatColor.RED,
+                    ChatColor.YELLOW, p.getWorld().toString(), ChatColor.RED));
+
+            logger.info(PLUGIN_NAME + "Player " + p.getName() + " removed world " +
+                    p.getWorld().toString() + " from excluded worlds");
+        } else {
+            ex_worlds.add(p.getWorld().toString());
+            p.sendMessage(String.format("%s[DeathCharge]%s Added %s%s%s to excluded worlds!",
+                    ChatColor.YELLOW, ChatColor.RED, ChatColor.GREEN,
+                    p.getWorld().toString(), ChatColor.RED));
+            logger.info(PLUGIN_NAME + "Player " + p.getName() + " " +
+                    "added world " + p.getWorld().toString() + " to excluded worlds");
+        }
+    }
+
     private void about(Player p) {
         p.sendMessage(String.format("%s[DeathCharge]%s by seemethere",
                 ChatColor.YELLOW, ChatColor.RED));
@@ -183,6 +216,9 @@ public class DeathCharge extends JavaPlugin implements Listener {
         if (p.getKiller() != null)
             if (!this.getConfig().getBoolean("pvp"))
                 return;
+        // Add multiworld support
+        if (ex_worlds.contains(p.getWorld().toString()))
+            return;
         //Checks if the area the player is standing in is excluded
         if (find_Region(p.getLocation()) != null) {
             String r = find_Region(p.getLocation()).getId().toLowerCase();
