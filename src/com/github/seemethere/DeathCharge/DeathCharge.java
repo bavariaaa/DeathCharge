@@ -26,20 +26,27 @@ import java.util.logging.Logger;
 
 /**
  * @author seemethere
+ *
+ * <p>
+ *     Simple plugin to charge people economy money on death
+ * </p>
  */
 public class DeathCharge extends JavaPlugin implements Listener {
 
     private static final String PLUGIN_NAME = "[DeathCharge] ";
-    private static HashMap<String, String> ex_regions = new HashMap<String, String>();
-    private static List<String> ex_worlds = new ArrayList<String>();
-    private static YamlConfiguration r_config = null;
-    public Logger logger = Logger.getLogger("Minecraft");
+    private boolean isPercent;
+    private boolean drain;
+    private double amount;
+    private HashMap<String, String> ex_regions = new HashMap<String, String>();
+    private List<String> ex_worlds = new ArrayList<String>();
+    private YamlConfiguration r_config = null;
+    public  Logger logger = Logger.getLogger("Minecraft");
     private Economy e = null;
     private WorldGuardPlugin wg = null;
 
     @Override
     public void onEnable() {
-        //Make initial config and ExculdedRegions.yml
+        //Make initial config and ExcludedRegions.yml
         if (!make_Config()) {
             logger.severe(PLUGIN_NAME + "Unable to create config or ExcludedRegion.yml! Exiting...");
             return;
@@ -76,7 +83,9 @@ public class DeathCharge extends JavaPlugin implements Listener {
         }
         // Add support for multi-worlds
         ex_worlds = r_config.getStringList("ex_worlds");
-
+        isPercent = this.getConfig().getBoolean("isPercent");
+        amount = this.getConfig().getDouble("amountTaken");
+        drain = this.getConfig().getBoolean("drain");
         this.getServer().getPluginManager().registerEvents(this, this);
         logger.info(PLUGIN_NAME + "DeathCharge has been enabled!");
     }
@@ -149,7 +158,23 @@ public class DeathCharge extends JavaPlugin implements Listener {
                 c_region(p);
             else if (args[0].equalsIgnoreCase("world"))
                 c_world(p);
+            else if (args[0].equalsIgnoreCase("reload"))
+                c_reload(p);
         return true;
+    }
+
+    private void c_reload(Player p) {
+        if (!p.isOp()) {
+            p.sendMessage(String.format("%sERROR: %sInsufficient permissions!",
+                    ChatColor.RED, ChatColor.YELLOW));
+            return;
+        }
+        this.reloadConfig();
+        isPercent = this.getConfig().getBoolean("isPercent");
+        amount = this.getConfig().getDouble("amountTaken");
+        drain = this.getConfig().getBoolean("drain");
+        p.sendMessage(String.format("%s[DeathCharge]%s Config reloaded",
+                ChatColor.YELLOW, ChatColor.RED));
     }
 
     private void c_region(Player p) {
@@ -209,9 +234,12 @@ public class DeathCharge extends JavaPlugin implements Listener {
                 ChatColor.YELLOW, ChatColor.RED));
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player p = event.getEntity();
+        //Added a permission exemption
+        if (p.hasPermission("deathcharge.exempt"))
+            return;
         //Checks the config to disable/enable pvp toggle
         if (p.getKiller() != null)
             if (!this.getConfig().getBoolean("pvp"))
@@ -227,9 +255,22 @@ public class DeathCharge extends JavaPlugin implements Listener {
                 return;
         }
         //Actually take the money from the account
-        double m_lost = (this.getConfig().getDouble("percent") / 100) * e.getBalance(p.getName());
+        double m_lost;
+        if (isPercent)
+            m_lost = (amount / 100) * e.getBalance(p.getName());
+        else if (e.getBalance(p.getName()) > amount)
+            m_lost = amount;
+        else if (drain)
+            m_lost = e.getBalance(p.getName());
+        else
+            return;
+
         e.withdrawPlayer(p.getName(), m_lost);
-        p.sendMessage(String.format("%sYou have lost %s$%.2f%s on death!",
-                ChatColor.YELLOW, ChatColor.RED, m_lost, ChatColor.YELLOW));
+        //Custom messages
+        String amount = String.format("%.2f", m_lost);
+        String message = ChatColor.translateAlternateColorCodes('&', this.getConfig().getString("message"));
+        message = message.replace("{MONEY}", amount);
+        p.sendMessage(String.format("%s[DeathCharge]%s %s",
+                ChatColor.YELLOW, ChatColor.WHITE, message));
     }
 }

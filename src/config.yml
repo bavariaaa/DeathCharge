@@ -1,12 +1,28 @@
 #This is the default config for [DeathCharge]
 
-#Percent determines the amount of
-#percentage lost when a player dies
-#Example:
-#    percent: 5.00
-#    Player will lose 5 percent of
-#    their money on death
-percent: 5.00
+#Determines if the value chosen to be taken
+#is either a percentage or a hard amount
+isPercent: true
+
+#If isPercent is false, and a player does not
+#have sufficient funds to pay the deathcharge,
+#drain will determine whether to drain the
+#remaining funds and reset their balance to $0
+#or leave their balance alone
+drain: false
+
+#Percent/Amount to be taken on death
+# EXAMPLE:
+#        |=======================================|
+#        |amountTaken: 5.00                      |
+#        |isPercent: true                        |
+#        |Players lose 5% of their money on death|
+#        |=======================================|
+#        |amountTaken: 5.00                      |
+#        |isPercent: false                       |
+#        |Players lose $5 of their money on death|
+#        |=======================================|
+amountTaken: 5.00
 
 #PVP determines if death charge is invoked
 #on deaths caused by pvp
@@ -14,12 +30,10 @@ percent: 5.00
 # true = will not lose money on pvp
 pvp: false
 
-#*******************************************************
-#****                                               ****
-#****      Regions can only be added in-game        ****
-#****              with the command                 ****
-#****            /deathcharge region                ****
-#****                                               ****
-#****   Regions are stored in ExcludedRegions.yml   ****
-#****                                               ****
-#*******************************************************
+#Message determines what message will be sent
+#to the player upon death. All standard color
+#codes are supported and all messages will
+#start with [DeathCharge]
+#
+# {MONEY} = amount lost on death
+message: "&cYou have lost &a{MONEY}&c on death!"
