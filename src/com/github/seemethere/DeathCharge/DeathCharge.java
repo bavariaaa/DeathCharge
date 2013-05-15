@@ -147,7 +147,10 @@ public class DeathCharge extends JavaPlugin implements Listener {
 
     public boolean onCommand(CommandSender sender, Command command, String label, String args[]) {
         if (!(sender instanceof Player)) {
-            logger.info(PLUGIN_NAME + "Silly console you can't do any commands");
+            if (args[0].equalsIgnoreCase("reload"))
+                c_reload(sender);
+            else
+                logger.info(PLUGIN_NAME + "Silly console you can't do any commands");
             return true;
         }
         Player p = (Player) sender;
@@ -159,21 +162,24 @@ public class DeathCharge extends JavaPlugin implements Listener {
             else if (args[0].equalsIgnoreCase("world"))
                 c_world(p);
             else if (args[0].equalsIgnoreCase("reload"))
-                c_reload(p);
+                c_reload(sender);
         return true;
     }
 
-    private void c_reload(Player p) {
-        if (!p.isOp()) {
-            p.sendMessage(String.format("%sERROR: %sInsufficient permissions!",
+    private void c_reload(CommandSender sender) {
+        if (sender instanceof Player) {
+            Player p = (Player) sender;
+            if (!p.isOp()) {
+                p.sendMessage(String.format("%sERROR: %sInsufficient permissions!",
                     ChatColor.RED, ChatColor.YELLOW));
-            return;
+                return;
+            }
         }
         this.reloadConfig();
         isPercent = this.getConfig().getBoolean("isPercent");
         amount = this.getConfig().getDouble("amountTaken");
         drain = this.getConfig().getBoolean("drain");
-        p.sendMessage(String.format("%s[DeathCharge]%s Config reloaded",
+        sender.sendMessage(String.format("%s[DeathCharge]%s Config reloaded",
                 ChatColor.YELLOW, ChatColor.RED));
     }
 
