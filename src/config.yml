@@ -4,6 +4,11 @@
 #is either a percentage or a hard amount
 isPercent: true
 
+#ONLY ACTIVE IF isPERCENT = TRUE
+#Will round values to nearest whole amount
+#if true
+rounded-values: false
+
 #If isPercent is false, and a player does not
 #have sufficient funds to pay the deathcharge,
 #drain will determine whether to drain the

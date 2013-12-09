@@ -36,6 +36,7 @@ public class DeathCharge extends JavaPlugin implements Listener {
     private static final String PLUGIN_NAME = "[DeathCharge] ";
     private boolean isPercent;
     private boolean drain;
+    private boolean round;
     private double amount;
     private HashMap<String, String> ex_regions = new HashMap<String, String>();
     private List<String> ex_worlds = new ArrayList<String>();
@@ -49,6 +50,7 @@ public class DeathCharge extends JavaPlugin implements Listener {
         //Make initial config and ExcludedRegions.yml
         if (!make_Config()) {
             logger.severe(PLUGIN_NAME + "Unable to create config or ExcludedRegion.yml! Exiting...");
+            setEnabled(false);
             return;
         }
 
@@ -62,6 +64,7 @@ public class DeathCharge extends JavaPlugin implements Listener {
         //Set up WorldGuard
         if (!(this.getServer().getPluginManager().getPlugin("WorldGuard") instanceof WorldGuardPlugin)) {
             logger.severe(PLUGIN_NAME + " No WorldGuard found! Exiting via exception...");
+            setEnabled(false);
             throw new RuntimeException();
         }
         wg = (WorldGuardPlugin) this.getServer().getPluginManager().getPlugin("WorldGuard");
@@ -72,6 +75,7 @@ public class DeathCharge extends JavaPlugin implements Listener {
             r_config = YamlConfiguration.loadConfiguration(r_file);
         } catch (Throwable t) {
             logger.severe(PLUGIN_NAME + "Unable to load ExcludedRegions.yml! Exiting...");
+            setEnabled(false);
             return;
         }
 
@@ -84,6 +88,7 @@ public class DeathCharge extends JavaPlugin implements Listener {
         // Add support for multi-worlds
         ex_worlds = r_config.getStringList("ex_worlds");
         isPercent = this.getConfig().getBoolean("isPercent");
+        round = this.getConfig().getBoolean("rounded-values");
         amount = this.getConfig().getDouble("amountTaken");
         drain = this.getConfig().getBoolean("drain");
         this.getServer().getPluginManager().registerEvents(this, this);
@@ -147,7 +152,7 @@ public class DeathCharge extends JavaPlugin implements Listener {
 
     public boolean onCommand(CommandSender sender, Command command, String label, String args[]) {
         if (!(sender instanceof Player)) {
-            if (args[0].equalsIgnoreCase("reload"))
+            if (args.length == 1 && args[0].equalsIgnoreCase("reload"))
                 c_reload(sender);
             else
                 logger.info(PLUGIN_NAME + "Silly console you can't do any commands");
@@ -196,7 +201,8 @@ public class DeathCharge extends JavaPlugin implements Listener {
                     ex_regions.remove(id.toLowerCase());
                     p.sendMessage(String.format("%s[DeathCharge]%s Removed %s%s%s from excluded regions!",
                             ChatColor.YELLOW, ChatColor.RED, ChatColor.YELLOW, id, ChatColor.RED));
-                    logger.info(PLUGIN_NAME + "Player " + p.getName() + " removed region " + id + " from excluded regions");
+                    logger.info(PLUGIN_NAME + "Player " + p.getName() + " removed region "
+                            + id + " from excluded regions");
                     return;
                 }
             ex_regions.put(id.toLowerCase(), p.getWorld().toString());
@@ -240,6 +246,7 @@ public class DeathCharge extends JavaPlugin implements Listener {
                 ChatColor.YELLOW, ChatColor.RED));
     }
 
+
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player p = event.getEntity();
@@ -271,9 +278,16 @@ public class DeathCharge extends JavaPlugin implements Listener {
         else
             return;
 
+        //Added the ability to round values
+        if (round && isPercent)
+            m_lost = Math.ceil(m_lost);
+
         e.withdrawPlayer(p.getName(), m_lost);
         //Custom messages
         String amount = String.format("%.2f", m_lost);
+        // Added logic to easily identify nil values
+        if (m_lost == 0)
+            amount = "nothing";
         String message = ChatColor.translateAlternateColorCodes('&', this.getConfig().getString("message"));
         message = message.replace("{MONEY}", amount);
         p.sendMessage(String.format("%s[DeathCharge]%s %s",

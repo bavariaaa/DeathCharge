@@ -1,6 +1,6 @@
 name: DeathCharge
 main: com.github.seemethere.DeathCharge.DeathCharge
-version: $version$
+version: 1.5
 author: seemethere
 depend: [Vault, WorldGuard, WorldEdit]
 commands:
